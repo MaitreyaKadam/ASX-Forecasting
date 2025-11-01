@@ -1,9 +1,9 @@
 ## ASX Time Series Forecasting 📈
 
-Overview 🚀
+🚀 Overview 
 - This project presents a time series analysis of monthly averages from January 2004 onward, focusing on the ASX ALL Ordinaries, Price Index, Gold Price (AUD), Crude Oil, and Copper Price
 
-Primary Objective
+🎯 Primary Objective
 - Investigate non-stationarity in the time series
 - Decompose and interpret time series components
 - Built and Evaluated Distributed Lag Models to forecast the ASX Price Index using predictors.
