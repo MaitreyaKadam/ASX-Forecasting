@@ -1,0 +1,696 @@
+---
+title: "Forecasting Assignment1"
+output: html_document
+author: Maitreya Milind Kadam (s4087536)
+date: "2025-08-28"
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,include=FALSE}
+
+library(readr)
+library(tseries)
+library(forecast)
+library(TSA)
+library(dynlm)
+library(x12)
+library(dLagM)
+library(car)
+
+```
+
+## Introduction
+
+The aim of this assignment is to analyze the time series and to check the existence of non-stationarity present in the variables.
+It is also expected to talk about the impact of the components of a time series.
+In addition to this, the most accurate and distributed lag models are also to be explored based on the relation between ASX Price Index and the other variables.
+
+## Data Description
+
+I have loaded and inspected the structure of the dataset provided.
+After that I have converted the dataframe into a time series object for analysis based on visualization.
+
+```{r}
+a1_data=read_csv('ASX_data.csv')
+```
+
+```{r}
+str(a1_data)
+```
+
+The dataframe a1_data is to be converted into time series for further analysis.
+
+```{r}
+asx=ts(a1_data$`ASX price`,start=c(2004,1),frequency=12)
+gold=ts(a1_data$`Gold price`,start=c(2004,1),frequency=12)
+crude_oil=ts(a1_data$`Crude Oil (Brent)_USD/bbl`,start=c(2004,1),frequency=12)
+copper=ts(a1_data$`Copper_USD/tonne`,start=c(2004,1),frequency=12)
+data.ts=ts(a1_data[,1:4],start=c(2004,1),frequency=12)
+```
+
+## Time Series visualisation for all the variables
+
+```{r}
+
+plot(asx, main="Fig.1. Time Series plot for ASX Price Index", ylab="Index",type='o')
+
+```
+
+Based on Fig.1.
+the following points can be infered:
+
+1.  Trend: The time series plot indicates a long-term upward trend which indicates that the ASX Price Index generally increased over the period with some declines in between.
+    There is a strong upward trend from 2004 to early 2008, followed by a sharp decline which is likely to be associated with the global financial crisis.
+
+2.  Seasonality: The plot does not indicate any obvious seasonality over the period as the plot appears to be irregular and not tied to specific times of the year.
+
+3.  Variance: The fluctuations appear to be irregular and do not seem to repeat on a yearly basis which indicates high variance in the data.
+
+4.  Change Point: The most significant change point in the time series occured around 2008 which is likely to be caused by the global financial crisis.
+
+5.  The absence of constant mean and an overall trend suggests that the series is likely non-stationary.
+    Further analysis using ACF and PACF plots with statistical tests like the ADF test would be necessary to confirm this observation.
+
+```{r}
+plot(gold, main='Fig.2. Time Series plot for Gold Price(AUD)',ylab='AUD',type='o')
+```
+
+Based on Fig.2.
+the following points can be infered:
+
+1.  Trend: The time series plot for Gold indicates a long-term upward trend which indicates that the gold price increased over the entire period.
+    However, this trend is not smooth with certain jumps and drops which can be observed.
+
+2.  Seasonality: The fluctuations seem to be irregular which indicates the absence of a seasonal pattern for the time series.
+
+3.  Variance: The time series suggests that the variance is not constant and this volatility seems to increase as the gold price increases.
+    The magnitude for these fluctuations are much larger in the later years.
+
+4.  Change Points: There is no significant changepoint in this time series.
+    The time series is likely to be non-stationary as there is no constant mean and there is an upward trend.
+    Further analysis using the ACF, PACF and ADF tests would confirm if the series is non-stationary.
+
+```{r}
+plot(crude_oil,main='Fig.3. Time Series Plot for Crude Oil Price(USD/bbl)',ylab="USD",type='o')
+```
+
+Based on Fig.3.
+the following points can be infered:
+
+1.  Trend: This particular time series exhibits a mix of upward trend and downward trend.
+    The upward trend appears to be from 2004 to mid 2008 which is followed by a sharp decline.
+
+2.  Seasonality: The large fluctuations are irregular and does not appear to follow a regular pattern over the period which does not indicate any seasonality.
+
+3.  Variance: As mentioned earlier, the large fluctuations indicate that the variance of the data is clearly not constant.
+
+4.  Change Point: From the above time series plots, there appear to be 2 significant change points, the first around 2008 where the price peaked and then showed a sharp decline.
+    The second is around 2014 where the price shows a sharp decline once again.
+
+5.  This time series too shows absence of a constant mean and a constant variance which indicates that the series is non-stationary and this can be confirmed by the further analysis using ACF, PACF, and ADF tests.
+
+```{r}
+plot(copper,main='Fig.4. Time Series plot for Copper Price(USD/tonne)',ylab='USD',type='o')
+```
+
+Based on Fig.4.
+the following points can be inferred:
+
+1.  Trend: The time series plot for copper price shows a clear non-linear trend.
+    There is an upward trend from 2004 to 2008, which is followed by a sharp drop.
+
+2.  Seasonality: The movements and large fluctuations appear to be irregular and they don't seem to follow a regular pattern which indicates that there is no seasonality present.
+
+3.  Variance: It is clear from the above plot that the variance is not constant, the fluctuations are significant and of a large magnitude.
+
+4.  Change Point: The most prominent change point is around 2008 which results in a sharp drop of the copper price.
+
+5.  This time series too appears to be non-stationary as there is no constant mean and this can be confirmed by further analysis using ACF, PACF, and ADF tests.
+
+## Existence of non stationarity in the dataset
+
+```{r}
+#ACF and PACF plot for ASX Price Index
+par(mfrow=c(1,2))
+acf(asx,lag.max=70,main='ACF for ASX Price Index')
+pacf(asx,lag.max=70,main='PACF for ASX Price Index')
+```
+
+-   The slow decay in the above ACF plot clearly indicates that the series in non stationary, and it is also a classic sign of a strong trend in the data.
+    There is no evidence of seasonality present in the data.
+
+-   In the PACF plot, the presence of a very large significant spike at lag 1, followed by a sharp drop-off to insignificant values indicates that the series is non stationary.
+
+```{r}
+adf.test(asx)
+```
+
+-   The p-value of 0.2846 from the ADF test is \>0.05, this fails to reject the null hypothesis of non-stationarity.
+
+-   Based on the observations from the ACF, PACF plots and the ADF test it is confirmed that non stationarity exists in the time series.
+
+```{r}
+#ACF and PACF plot for Gold Price
+par(mfrow=c(1,2))
+acf(gold,lag.max=70,main='ACF for Gold Price(AUD)')
+pacf(gold,lag.max=70,main='PACF for Gold Price(AUD)')
+```
+
+-   The gradual decay in the ACF plot for Gold price suggests that the series is non-stationary and it also highlights the presence of a strong trend in the data.
+    As the ACF plot does not exhibit a repeating pattern there is no seasonality present in the data.
+
+-   As the PACF plot begins with a large spike at lag 1, which is followed by insignificant values indicates the non-stationary behaviour of the data.
+
+```{r}
+adf.test(gold)
+```
+
+-   Based on the ADF test, the p-value of 0.6444(\>0.05) fails to reject the null hypothesis of non-stationarity and this confirms that the time series is non-stationary.
+
+```{r}
+#ACF and PACF plot for Crude Oil Price
+par(mfrow=c(1,2))
+acf(crude_oil,lag.max=70,main='ACF for Crude Oil Price(USD/bbl)')
+pacf(crude_oil,lag.max=70,main='PACF for Crude Oil Price(USD/bbl)')
+```
+
+-   This ACF plot for Crude Oil Price shows a decaying pattern suggesting the existence of trend.
+    In addition to that, no seasonality was observed in the ACF plot.
+
+-   Like previous PACF plots, this plot for Crude Oil Price also shows significant spike at lag which is again followed by insignificant values.
+    This overall behaviour indicates that the time series is non-stationary.
+
+```{r}
+adf.test(crude_oil)
+```
+
+-   After performing the ADF test, the p-value turns out to be 0.6379 which is \<0.05, it fails to reject the null hypothesis non-stationarity and this confirms that the time series is non-stationary.
+
+```{r}
+#ACF and PACF plot for Copper Price
+par(mfrow=c(1,2))
+acf(copper,lag.max=70,main='ACF for Copper Price(USD/tonne)')
+pacf(copper,lag.max=70,main='PACF for Copper Price(USD/tonne)')
+```
+
+-   The ACF plot shows a slow, gradual decay with no seasonality in the data.
+
+-   There is a significant spike at the start of the PACF plot which is followed by a sharp drop-off to low insignificant values.
+    This evidence is sufficient to conclude that the time series is non-stationary.
+
+```{r}
+adf.test(copper)
+```
+
+-   Based on the above ADF Test, the p-value of 0.472 greater than 0.05 which means we fail to reject null hypothesis. It provides strong statistical evidence that the series in non-stationary.
+
+```{r}
+#Box-Cox lambda for asx price index
+BC_lambda_asx=BoxCox.lambda(asx)
+print(paste('Lambda for ASX',BC_lambda_asx))
+
+#Box-Cox lambda for gold price
+BC_lambda_gold=BoxCox.lambda(gold)
+print(paste('Lambda for Gold',BC_lambda_gold))
+
+#Box-Cox lambda for crude oil price
+BC_lambda_crude=BoxCox.lambda(crude_oil)
+print(paste('Lambda for Crude Oil',BC_lambda_crude))
+
+#Box-Cox lambda for copper price
+BC_lambda_copper=BoxCox.lambda(copper)
+print(paste('Lambda for Copper',BC_lambda_copper))
+
+```
+
+The lambda value for Gold and Copper is close to 1, which indicates that those 2 time series won't be needing any transformation.
+So we will just applying differencing to those 2 series and then we will proceed with the box-cox transformation and differencing for ASX Price Index and Crude Oil.
+
+```{r}
+#first order differencing for Gold Price
+gold.diff = diff(gold,differences = 1)
+plot(gold.diff,ylab='AUD',
+xlab='Time',main = "Time Series plot of the first difference of Gold Price(AUD)",type='o')
+```
+
+After performing differencing on the time series for gold, the plot indicates that the series now fluctuates around a constant mean.
+This clearly indicates that the trend is removed and the series is stationary.
+
+```{r}
+#first order differencing for Copper.
+copper.diff = diff(copper,differences = 1)
+plot(copper.diff,ylab='USD',
+xlab='Time',main = "Time Series plot of the first difference of Copper_USD/tonne",type='o')
+```
+
+The above plot illustrates the differenced version of the time series for copper.
+It can be obeserved that the trend has be removed and now the series fluctuates around a constant mean.
+This is a key indicator of a stationary series.
+Summing it up, we can say that the trend is removed and the series is stationary.
+
+### For ASX Price Index
+
+```{r}
+#Box-Cox transformation for ASX
+lambda=1.999924
+BC.asx=((asx^(lambda))-1)/lambda
+plot(BC.asx,ylab='Index',xlab='Time',type='o', main="Box-Cox Transformed ASX Price Index")
+```
+
+Even after applying Box-Cox transformation, the high variance in the data is still present along with the upward trend.
+Therefore, I am applying 1st order differencing to remove the trend and making the series stationary.
+
+```{r}
+#first order differencing to the Box-Cox transformed data
+asx.diff = diff(BC.asx,differences = 1)
+plot(asx.diff,ylab='Index',
+xlab='Time',main = "Time Series plot of the first difference of ASX Price Index",type='o')
+```
+
+After appplying 1st order differencing, the time series appears to fluctuate around a constant mean, which highly indicates that stationarity is acheived.
+However, I would still conduct an ADF test to confirm that the series is stationary.
+
+```{r}
+adf.test(asx.diff)
+```
+
+Based on the above ADF test results, the p-value is 0.01 which is less than 0.05 and therefore, it confirms that the time series is now stationary.
+
+### For Crude Oil Price (USD/bbl)
+
+```{r}
+lambda=-0.8304136
+BC.crude=((crude_oil^(lambda))-1)/lambda
+plot(BC.crude,ylab='USD',xlab='Time',type='o', main="Box-Cox Transformed Crude_Oil")
+```
+
+Even after applying the Box-Cox transformation it is evident that the series still exhibits a clear trend and high volatility.
+The transformation was not sufficient to make the series stationary.
+Therefore, I would be applying first-order differencing to stabilize the mean and make the series stationary.
+
+```{r}
+#first order differencing to the Box-Cox transformed data for Crude Oil
+crude.diff = diff(BC.crude,differences = 1)
+plot(crude.diff,ylab='USD',
+xlab='Time',main = "Time Series plot of the first difference of Crude Oil",type='o')
+```
+
+Upon applying 1st order differencing, it can be observed that the trend has be removed and the differenced series fluctuates around a constant mean which clearly indicates that the trend has been eliminated and the series is now stationary.
+
+```{r}
+adf.test(crude.diff)
+```
+
+From the above ADF result it can be seen that the p-value is 0.01 which is less than 0.05 and this indicates that the series is stationary.
+
+## Components of a Time Series Data
+
+## STL Decomposition for ASX Price Index
+
+```{r}
+fit.asx=stl(BC.asx,t.window=15,s.window='periodic',robust=TRUE)
+plot(fit.asx)
+```
+
+From the above plot, it can be inferrred that:
+
+-   The trend present in the time series is clearly visible in the trend component of the time series and it is a long-term upward trend which a significant decline during the year 2008.
+
+-   A significant change point occured around the year 2008 and it can be observed that both the trend component and the remainder component showed a significant peak.
+
+## STL Decomposition for Gold Price
+
+```{r}
+fit.gold=stl(gold,t.window = 15,s.window = 'periodic',robust=TRUE)
+plot(fit.gold)
+```
+
+From the above plot it can be inferred that:
+
+-   Based on the trend component, it is clear that the series exhibits a long-term upward trend.
+
+## STL Decomposition for Crude Oil
+
+```{r}
+fit.crude=stl(BC.crude,t.window = 15,s.window = 'periodic',robust=TRUE)
+plot(fit.crude)
+```
+
+Based on the above plot it can be inferred that:
+
+-   According to the trend component, there is a long term non-linear movement in the series where there is an upward trend from 2004 to 2008 which is followed by a relative stability before a downward trend from 2014.
+
+-   Two significant change points can be observed during the year 2008 and 2016, where the trend component and the remainder component indicates large spikes.
+
+## STL Decomposition for Copper
+
+```{r}
+fit.copper=stl(copper,t.window = 15,s.window = 'periodic',robust=TRUE)
+plot(fit.copper)
+```
+
+Based on the above plot, the following points can be inferred:
+
+-   The trend component captures the long-term trend which points out the sharp decline around the year 2009 which is followed by a recovery curve.
+
+-   A significant change point is observed during the year 2009 during which the trend component and the remainder component shows large spikes.
+
+## Modelling
+
+```{r}
+plot(data.ts, plot.type="s", col=c("blue", "red", "black", "green"), main = "All prices")
+legend('topleft',
+       legend = c("ASX Price", "Gold Price", "Oil Price", "Copper Price"),
+       col = c("blue", "red", "black", "green"),
+       lty = 1,)
+
+```
+
+The components are to be scaled in the next chunk to draw correlation between them.
+
+```{r}
+asxdata.scale = scale(data.ts)
+plot(asxdata.scale, plot.type="s", col=c("blue", "red", "black", "green"), main = "All prices")
+legend("topleft", 
+       legend=c("ASX Price", "Gold Price", "Oil Price", "Copper Price"),
+       col=c("blue", "red", "black", "green"),
+       lty=1,
+       cex=0.8)
+```
+
+From the above plot, it is clearly visible that the Copper Price and the Crude Price track each other closely which clearly indicates that those two are high correlated.
+In addition to that, the ASX Price Index and Copper also have a high degree of correlation between them.
+In order to confirm this, let's inspect the correlation matrix between the variables.
+
+```{r}
+cor(data.ts)
+```
+
+According to the above correlation matrix,it is confirmed that the correlation between Crude Oil Price and Copper Price is on the high positive side.
+It is also confirmed that there is a high correlation between ASX Price and Copper Price.
+We will proceed with the relation of each attribute with ASX Price Index so that we can find the most accurate and suitable distributed lag model for the ASX Price Index.
+
+## Modelling for ASX Price Index with Gold
+
+## DLM Model Fitting for ASX Price VS Gold Price
+
+```{r}
+for (i in 1:6){
+  GAmodel1.1=dlm(x=as.vector(gold),y=as.vector(asx),q=i)
+  cat("q = ",i, "AIC = ", AIC(GAmodel1.1$model), "BIC = ",BIC(GAmodel1.1$model),"\n")
+}
+```
+
+We will proceed with the q value of 6 as it exhibits the smallest AIC and BIC values.
+
+```{r}
+GAmodel1=dlm(x=as.vector(gold),y=as.vector(asx),q=6)
+summary(GAmodel1)
+```
+
+```{r}
+checkresiduals(GAmodel1$model)
+```
+
+## Polynomial DLM Model Fitting for ASX Price and Gold Price
+
+```{r}
+q_val=1:5
+k_val=1:3
+for (i in q_val){
+  for (j in k_val){
+    if (j<=i){
+      GAmodel2.2=polyDlm(x=as.vector(gold),y=as.vector(asx),q=i,k=j,show.beta=TRUE)
+      cat("q = ",i,"k= ",j, "AIC = ", AIC(GAmodel2.2$model), "BIC = ",BIC(GAmodel2.2$model),"\n")
+    }
+  }
+}
+
+
+```
+
+The lowest AIC and BIC values are observed at q=5 and k=1, therefore I will proceed with those two values for Polynomial DLM modelling.
+
+```{r}
+GAmodel2=polyDlm(x=as.vector(gold),y=as.vector(asx),q=5,k=1,show.beta=TRUE)
+summary(GAmodel2)
+```
+
+```{r}
+checkresiduals(GAmodel2$model)
+```
+
+## KoyckDLM Model Fitting for ASX Price and Gold Price
+
+```{r}
+GAmodel3 = koyckDlm(x=as.vector(gold), y=as.vector(asx))
+summary(GAmodel3,diagnostics=TRUE)
+```
+
+```{r}
+checkresiduals(GAmodel3$model) 
+```
+
+## AutoRegressive DLM Model Fitting for ASX Price and Gold Price
+
+```{r}
+for(i in 1:5){
+  for(j in 1:5){
+    GAmodel4.1 = ardlDlm(x = as.vector(gold), y = as.vector(asx), p = i, q = j)
+    cat("p = ", i, "q = ", j, "AIC = ", AIC(GAmodel4.1$model), "BIC = ", BIC(GAmodel4.1$model), "\n")
+  }
+}
+```
+
+The lowest AIC and BIC values are observed at p=1 and q=5, therefore I will proceed with those two values for Autoregressive DLM modelling.
+
+```{r}
+GAmodel4 = ardlDlm(x = as.vector(gold), y = as.vector(asx), p = 1, q = 5)
+summary(GAmodel4)
+```
+
+```{r}
+checkresiduals(GAmodel4$model)
+```
+
+Based on the above results after modelling, it can be concluded that the best distributed lag model for ASX Price Index and Gold Price is the AutoRegressive Lag model i.e.
+GAmodel4 which has p=1 and q=5 as it has lowest AIC and BIC values among all i.e.
+AIC=2092.194 and BIC=2119.643.
+In addition to that it has a very high adjusted R-square value as well along with no significant lags in the ACF plot for the residuals.
+
+## Modelling for ASX Price Index with Crude Oil
+
+## DLM Model Fitting for ASX Price VS Crude Oil
+
+```{r}
+#CA--> CrudeOil and ASX
+for (i in 1:6){
+  CAmodel1.1=dlm(x=as.vector(crude_oil),y=as.vector(asx),q=i)
+  cat("q = ",i, "AIC = ", AIC(CAmodel1.1$model), "BIC = ",BIC(CAmodel1.1$model),"\n")
+}
+```
+
+We will proceed with the q value of 6 as it exhibits the smallest AIC and BIC values.
+
+```{r}
+CAmodel1=dlm(x=as.vector(crude_oil),y=as.vector(asx),q=6)
+summary(CAmodel1)
+```
+
+```{r}
+checkresiduals(CAmodel1$model)
+```
+
+## Polynomial DLM Model Fitting for ASX Price and Crude Oil
+
+```{r}
+q_val=1:5
+k_val=1:3
+for (i in q_val){
+  for (j in k_val){
+    if (j<=i){
+      CAmodel2.2=polyDlm(x=as.vector(crude_oil),y=as.vector(asx),q=i,k=j,show.beta=TRUE)
+      cat("q = ",i,"k= ",j, "AIC = ", AIC(CAmodel2.2$model), "BIC = ",BIC(CAmodel2.2$model),"\n")
+    }
+  }
+}
+```
+
+The lowest AIC and BIC values are observed at q=5 and k=1, therefore I will proceed with those two values for Polynomial DLM modelling.
+
+```{r}
+CAmodel2=polyDlm(x=as.vector(crude_oil),y=as.vector(asx),q=5,k=1,show.beta=TRUE)
+summary(CAmodel2)
+```
+
+```{r}
+summary(CAmodel2)
+```
+
+```{r}
+checkresiduals(CAmodel2$model)
+```
+
+## KoyckDLM Model Fitting for ASX Price and Crude Oil
+
+```{r}
+CAmodel3 = koyckDlm(x=as.vector(crude_oil), y=as.vector(asx))
+summary(CAmodel3,diagnostics=TRUE)
+```
+
+```{r}
+checkresiduals(CAmodel3$model)
+```
+
+## AutoRegressive DLM Model Fitting for ASX Price and Crude Oil
+
+```{r}
+for(i in 1:5){
+  for(j in 1:5){
+    CAmodel4.1 = ardlDlm(x = as.vector(crude_oil), y = as.vector(asx), p = i, q = j)
+    cat("p = ", i, "q = ", j, "AIC = ", AIC(CAmodel4.1$model), "BIC = ", BIC(CAmodel4.1$model), "\n")
+  }
+}
+
+```
+
+The lowest AIC and BIC values are observed at p=5 and q=1, therefore I will proceed with those two values for Autoregressive DLM modelling.
+
+```{r}
+CAmodel4 = ardlDlm(x = as.vector(crude_oil), y = as.vector(asx), p = 5, q = 1)
+summary(CAmodel4)
+```
+
+```{r}
+checkresiduals(CAmodel4$model)
+```
+
+Based on the above results after modelling, it can be concluded that the best distributed lag model for ASX Price Index and Crude Oil is the AutoRegressive Lag model i.e.
+CAmodel4 which has p=5 and q=1 as it has lowest AIC and BIC values among all i.e.
+AIC=2097.076 and BIC=2124.525.
+In addition to that it has a very high adjusted R-square value as well along with no significant lags in the ACF plot for the residuals
+
+## Modelling for ASX Price Index with Copper Price
+
+## DLM Model Fitting for ASX Price VS Copper
+
+```{r}
+for (i in 1:6){
+  CuAmodel1.1=dlm(x=as.vector(copper),y=as.vector(asx),q=i)
+  cat("q = ",i, "AIC = ", AIC(CuAmodel1.1$model), "BIC = ",BIC(CuAmodel1.1$model),"\n")
+}
+```
+
+We will proceed with the q value of 6 as it exhibits the smallest AIC and BIC values.
+
+```{r}
+CuAmodel1=dlm(x=as.vector(copper),y=as.vector(asx),q=6)
+summary(CuAmodel1)
+```
+
+```{r}
+checkresiduals(CuAmodel1$model)
+```
+
+## Polynomial DLM Model Fitting for ASX Price VS Copper
+
+```{r}
+q_val=1:5
+k_val=1:3
+for (i in q_val){
+  for (j in k_val){
+    if (j<=i){
+      CuAmodel2.2=polyDlm(x=as.vector(copper),y=as.vector(asx),q=i,k=j,show.beta=TRUE)
+      cat("q = ",i,"k= ",j, "AIC = ", AIC(CuAmodel2.2$model), "BIC = ",BIC(CuAmodel2.2$model),"\n")
+    }
+  }
+}
+```
+
+The lowest AIC and BIC values are observed at q=5 and k=1, therefore I will proceed with those two values for Polynomial DLM modelling.
+
+```{r}
+CuAmodel2=polyDlm(x=as.vector(copper),y=as.vector(asx),q=5,k=1,show.beta=TRUE)
+summary(CuAmodel2)
+```
+
+```{r}
+checkresiduals(CuAmodel2$model)
+```
+
+## KoyckDLM Model Fitting for ASX Price VS Copper
+
+```{r}
+CuAmodel3=koyckDlm(x=as.vector(copper),y=as.vector(asx))
+summary(CuAmodel3,diagnostics=TRUE)
+```
+
+```{r}
+checkresiduals(CuAmodel3$model)
+```
+
+## AutoRegressive DLM Model Fitting for ASX Price VS Copper
+
+```{r}
+for(i in 1:5){
+  for(j in 1:5){
+    CuAmodel4.1 = ardlDlm(x = as.vector(copper), y = as.vector(asx), p = i, q = j)
+    cat("p = ", i, "q = ", j, "AIC = ", AIC(CuAmodel4.1$model), "BIC = ", BIC(CuAmodel4.1$model), "\n")
+  }
+}
+```
+
+The lowest AIC and BIC values are observed at p=5 and q=1, therefore I will proceed with those two values for Autoregressive DLM modelling.
+
+```{r}
+CuAmodel4 = ardlDlm(x=as.vector(copper), y=as.vector(asx), p=5, q=1)
+summary(CuAmodel4)
+```
+
+```{r}
+checkresiduals(CuAmodel4$model)
+```
+
+Based on the above results after modelling, it can be concluded that the best distributed lag model for ASX Price Index and Copper Price is the AutoRegressive Lag model i.e.
+CuAmodel4 which has p=5 and q=1 as it has lowest AIC and BIC values among all i.e.
+AIC=2095.118 and BIC=2122.566.
+In addition to that it has a very high adjusted R-square value as well along with no significant lags in the ACF plot for the residuals.
+
+## Best Distributed Lag Model
+
+```{r}
+vif(GAmodel4$model)
+```
+
+```{r}
+vif(CAmodel4$model)
+```
+
+```{r}
+vif(CuAmodel4$model)
+```
+
+```{r}
+```
+
+On comparing the models for the relations between ASX Price Index and other variables it was observed that the Autoregressive Distributed Lag Model was the best performer for all the three with lowest AIC and BIC values.
+Between these 3, the Autoregressive Lag Model for the ASX Price Index and Gold Price is the best performer with the lowest AIC value of 2092.194 and BIC value of 2119.643.
+Inspite of being the best performer, upon running VIF checks it was observed that there is a high presence of multicollinearity in the model which can be seen in the above R chunks.
+
+## Conclusion:
+
+The main task of this report was to analyze the provided time series and to run visual checks to decide the presence of non-stationarity in the dataset.
+Upon visual inspection, it was observed that the series were non-stationary which were then confirmed using the ACF, PACF plots and the ADF test.
+In order to remove the non-stationarity, Box-Cox transformation and 1st order differencing was performed to address the issue of high variance and absence of constant mean.
+
+While modelling the ASX Price Index with the other three variables, it was observed that the Autoregressive Distributed Lag Model was the best performer among all the 3 relations.
+The ARDLM model with ASX Price Index and Gold Price was the best distributed lag model with p=1 and q=5 which had an adjusted R-square value of 0.9478.
+However, upon running VIF checks on this model it was observed that there is a high presence of multicollinearity which may affect its accuracy.
+
+\
