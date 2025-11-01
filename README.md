@@ -1,7 +1,7 @@
 ## ASX Time Series Forecasting 📈
 
 Overview 🚀
-This project presents a time series analysis of monthly averages from January 2004 onward, focusing on the ASX ALL Ordinaries, Price Index, Gold Price (AUD), Crude Oil, and Copper Price
+- This project presents a time series analysis of monthly averages from January 2004 onward, focusing on the ASX ALL Ordinaries, Price Index, Gold Price (AUD), Crude Oil, and Copper Price
 
 Primary Objective
 - Investigate non-stationarity in the time series
