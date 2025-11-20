@@ -12,7 +12,7 @@
 - To address high variance and shifting mean, a Box-Cox transformation followed by 1st Order differencing was applied. This improved stationarity and prepared the data for modelling.
 - To capture the dynamic relation between ASX Index and Commodity Prices. The ARDLM model emerged as the most effective, which balances interpretability and predictive performance.
 - The best performing model incorporated Gold Price as a Predictor, with lag orders of p=1 and q=5, achieving an adjusted R-square of 0.9478 which indicates strong explanatory power and alignment between the series.
-- However, VIF checks revealed significant multi-collinearity which underscores the importance of cautious interpretation and potential refinement through variable selection or regularization
+- However, VIF checks revealed significant multi-collinearity which underscores the importance of cautious interpretation and potential refinement through variable selection or regularization.
 
 Tech Stack Used 🧰
 - R for data cleaning, analysis and visualisation
